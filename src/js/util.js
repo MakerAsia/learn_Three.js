@@ -129,6 +129,13 @@ function initTrackballControls(camera, renderer) {
     return trackballControls;
 }
 
+function initOrbitControls(camera, renderer) {
+    var orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
+    orbitControls.rotationSpeed = 0.5;
+
+    return orbitControls;
+}
+
 /**
  * Apply a simple standard material to the passed in geometry and return the mesh
  * 
