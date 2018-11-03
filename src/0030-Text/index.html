@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Learn Three.js</title>
+    <meta charset="UTF-8" />
+
+    <link rel="stylesheet" href="../css/default.css">
+
+    <script type="text/javascript" charset="UTF-8" src="../three/three.js"></script>
+    <script type="text/javascript" charset="UTF-8" src="../three/controls/TrackballControls.js"></script>
+    <script type="text/javascript" charset="UTF-8" src="../three/controls/OrbitControls.js"></script>
+    <script type="text/javascript" charset="UTF-8" src="../three/geometries/ConvexGeometry.js"></script>
+    <script type="text/javascript" charset="UTF-8" src="../three/geometries/QuickHull.js"></script>
+    <script type="text/javascript" charset="UTF-8" src="../three/geometries/ParametricGeometries.js"></script>
+    <script type="text/javascript" charset="UTF-8" src="../three/utils/SceneUtils.js"></script>    
+    <script type="text/javascript" src="../util/Stats.js"></script>
+    <script type="text/javascript" src="../util/dat.gui.js"></script>
+
+    <script type="text/javascript" src="../js/util.js"></script>    
+
+    <script type="text/javascript" src="./js/main.js"></script>
+
+</head>
+
+<body>
+    <!-- Div which will hold the Output -->
+    <div id="webgl-output"></div>
+
+    <!-- Javascript code that runs our Three.js examples -->
+    <script type="text/javascript">
+        (function () {
+            // contains the code for the example
+            init();
+            animate();
+        })();
+    </script>
+</body>
+
+</html>
