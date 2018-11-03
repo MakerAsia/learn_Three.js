@@ -25,22 +25,26 @@ function init() {
     controls.target.set( 0, 0, 0 );
     controls.update();    
     
-
-
-    loadScene();
-    addAxis();
-
     gui = new dat.GUI();
     gui.domElement.style.zIndex = "100";
 
     parameters =
     {
         text: "Hello World!",
-        plateEnabled: true,
+        Convert: "Preview",
     }    
     var folder1 = gui.addFolder('Text');
     folder1.add( parameters, "text").name("Text").onChange(updateText);
-    folder1.add( parameters, "plateEnabled").name("Plate").onChange(updateText);    
+
+    gui.add(parameters, 'Convert', {
+        "(Text Preview)": "Preview", 
+        "Laser Cutter (SVG)": "SVG", 
+        "3D Printer (STL)": "STL"
+    }).onChange(updateText)    
+
+    addAxis();
+
+    updateText();  
 
     document.getElementById("webgl-output").appendChild(renderer.domElement);
 
@@ -49,17 +53,24 @@ function init() {
     render();    
 }
 
-function updateText() {
-    console.log( parameters.text );
-}
-
 function addAxis() {
     // show axes in the screen
     var axes = new THREE.AxesHelper(20);
     scene.add(axes);  
 }
 
-function loadScene() {
+function updateText() {
+    var currentText = scene.getObjectByName('text');
+    if (currentText) 
+        scene.remove(currentText);
+    var currentPlate = scene.getObjectByName('plate');
+    if (currentPlate) 
+        scene.remove(currentPlate);
+
+    createText();
+}
+
+function createText() {
     var loader = new THREE.FontLoader();
     loader.load( '../assets/fonts/helvetiker_regular.typeface.json', function ( font ) {
         var xMid, yMid, text;
@@ -70,18 +81,65 @@ function loadScene() {
             opacity: 0.4,
             side: THREE.DoubleSide
         } );
+        var matDark = new THREE.LineBasicMaterial( {
+            color: color,
+            side: THREE.DoubleSide
+        } );        
         var message = parameters.text;
-        var shapes = font.generateShapes( message, 100 );
-        var geometry = new THREE.ShapeBufferGeometry( shapes );
-        geometry.computeBoundingBox();
-        xMid = - 0.5 * ( geometry.boundingBox.max.x - geometry.boundingBox.min.x );
-        yMid = - 0.5 * ( geometry.boundingBox.max.y - geometry.boundingBox.min.y );
 
-        geometry.translate( xMid, yMid, 0 );
-        // make shape ( N.B. edge view not visible )
-        text = new THREE.Mesh( geometry, matLite );
         //text.position.z = - 150;
-        scene.add( text );
+        if( parameters.Convert == 'Preview' ) {
+            var shapes = font.generateShapes( message, 100 );
+            var geometry = new THREE.ShapeBufferGeometry( shapes );
+            geometry.computeBoundingBox();
+            xMid = - 0.5 * ( geometry.boundingBox.max.x - geometry.boundingBox.min.x );
+            yMid = - 0.5 * ( geometry.boundingBox.max.y - geometry.boundingBox.min.y );
+    
+            geometry.translate( xMid, 0, 0 );
+            // make shape ( N.B. edge view not visible )
+            text = new THREE.Mesh( geometry, matLite );
+            text.name = "text"
+
+            scene.add( text );
+        }
+        else if( parameters.Convert == 'SVG' ) {
+            var shapes = font.generateShapes( message, 100 );
+            var holeShapes = [];
+            for ( var i = 0; i < shapes.length; i ++ ) {
+                var shape = shapes[ i ];
+                if ( shape.holes && shape.holes.length > 0 ) {
+                    for ( var j = 0; j < shape.holes.length; j ++ ) {
+                        var hole = shape.holes[ j ];
+                        holeShapes.push( hole );
+                    }
+                }
+            }
+            shapes.push.apply( shapes, holeShapes );     
+            
+            var lineText = new THREE.Object3D();
+            for ( var i = 0; i < shapes.length; i ++ ) {
+                var shape = shapes[ i ];
+                var points = shape.getPoints();
+                var geometry = new THREE.BufferGeometry().setFromPoints( points );
+
+                var lineMesh = new THREE.Line( geometry, matDark );
+                lineText.add( lineMesh );                
+            }
+            var helper = new THREE.BoxHelper(lineText, 0xff0000);
+            helper.update();
+            helper.geometry.computeBoundingBox();
+            xMid = - 0.5 * ( helper.geometry.boundingBox.max.x - helper.geometry.boundingBox.min.x );
+            yMid = - 0.5 * ( helper.geometry.boundingBox.max.y - helper.geometry.boundingBox.min.y );            
+    
+            //lineText.translate( 0, 0, 0 );
+            lineText.translateOnAxis( new THREE.Vector3(1, 0, 0), xMid );
+
+            lineText.name = "text"
+            scene.add( lineText );            
+        }
+        else if( parameters.Convert == 'STL' ) {
+        }
+
     });
 }
 
