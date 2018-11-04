@@ -70,75 +70,110 @@ function updateText() {
     createText();
 }
 
+function createObject( shapes ) {
+    var xMid, yMid, text;
+    var color = 0x006699;
+    var matLite = new THREE.MeshBasicMaterial( {
+        color: color,
+        transparent: true,
+        opacity: 0.4,
+        side: THREE.DoubleSide
+    } );
+    var matDark = new THREE.LineBasicMaterial( {
+        color: color,
+        side: THREE.DoubleSide
+    } );      
+    var matSolid = new THREE.MeshBasicMaterial( {
+        color: color,
+        transparent: false,
+        side: THREE.DoubleSide
+    } );          
+        
+    //text.position.z = - 150;
+    if( parameters.Convert == 'Preview' ) {
+        var geometry = new THREE.ShapeBufferGeometry( shapes );
+        geometry.computeBoundingBox();
+        xMid = - 0.5 * ( geometry.boundingBox.max.x - geometry.boundingBox.min.x );
+        yMid = - 0.5 * ( geometry.boundingBox.max.y - geometry.boundingBox.min.y );
+
+        geometry.translate( xMid, 0, 0 );
+        // make shape ( N.B. edge view not visible )
+        text = new THREE.Mesh( geometry, matLite );
+        text.name = "text"
+
+        scene.add( text );
+    }
+    else if( parameters.Convert == 'SVG' ) {
+        var holeShapes = [];
+        for ( var i = 0; i < shapes.length; i ++ ) {
+            var shape = shapes[ i ];
+            if ( shape.holes && shape.holes.length > 0 ) {
+                for ( var j = 0; j < shape.holes.length; j ++ ) {
+                    var hole = shape.holes[ j ];
+                    holeShapes.push( hole );
+                }
+            }
+        }
+        shapes.push.apply( shapes, holeShapes );     
+        
+        var lineText = new THREE.Object3D();
+        for ( var i = 0; i < shapes.length; i ++ ) {
+            var shape = shapes[ i ];
+            var points = shape.getPoints();
+            var geometry = new THREE.BufferGeometry().setFromPoints( points );
+
+            var lineMesh = new THREE.Line( geometry, matDark );
+            lineText.add( lineMesh );                
+        }
+        var helper = new THREE.BoxHelper(lineText, 0xff0000);
+        helper.update();
+        helper.geometry.computeBoundingBox();
+        xMid = - 0.5 * ( helper.geometry.boundingBox.max.x - helper.geometry.boundingBox.min.x );
+        yMid = - 0.5 * ( helper.geometry.boundingBox.max.y - helper.geometry.boundingBox.min.y );            
+
+        //lineText.translate( 0, 0, 0 );
+        lineText.translateOnAxis( new THREE.Vector3(1, 0, 0), xMid );
+
+        lineText.name = "text"
+        scene.add( lineText );            
+    }
+    else if( parameters.Convert == 'STL' ) {
+
+        var extrusionSettings = {
+            amount: 20, curveSegments: 12,
+            bevelThickness: 1, bevelSize: 2, bevelEnabled: false,
+            material: 0, extrudeMaterial: 1
+        };
+        
+        var lineText = new THREE.Object3D();
+        for ( var i = 0; i < shapes.length; i ++ ) {
+            var shape = shapes[ i ];
+            var geometry = new THREE.ExtrudeGeometry( shape, extrusionSettings ); 
+
+            var lineMesh = new THREE.Mesh( geometry, matSolid );
+            lineText.add( lineMesh );                
+        }
+        var helper = new THREE.BoxHelper(lineText, 0xff0000);
+        helper.update();
+        helper.geometry.computeBoundingBox();
+        xMid = - 0.5 * ( helper.geometry.boundingBox.max.x - helper.geometry.boundingBox.min.x );
+        yMid = - 0.5 * ( helper.geometry.boundingBox.max.y - helper.geometry.boundingBox.min.y );            
+
+        //lineText.translate( 0, 0, 0 );
+        lineText.translateOnAxis( new THREE.Vector3(1, 0, 0), xMid );
+
+        lineText.name = "text"
+        scene.add( lineText );           
+    }
+}
+
 function createText() {
     var loader = new THREE.FontLoader();
     loader.load( '../assets/fonts/helvetiker_regular.typeface.json', function ( font ) {
-        var xMid, yMid, text;
-        var color = 0x006699;
-        var matLite = new THREE.MeshBasicMaterial( {
-            color: color,
-            transparent: true,
-            opacity: 0.4,
-            side: THREE.DoubleSide
-        } );
-        var matDark = new THREE.LineBasicMaterial( {
-            color: color,
-            side: THREE.DoubleSide
-        } );        
         var message = parameters.text;
+        var shapes = font.generateShapes( message, 100 );
 
-        //text.position.z = - 150;
-        if( parameters.Convert == 'Preview' ) {
-            var shapes = font.generateShapes( message, 100 );
-            var geometry = new THREE.ShapeBufferGeometry( shapes );
-            geometry.computeBoundingBox();
-            xMid = - 0.5 * ( geometry.boundingBox.max.x - geometry.boundingBox.min.x );
-            yMid = - 0.5 * ( geometry.boundingBox.max.y - geometry.boundingBox.min.y );
-    
-            geometry.translate( xMid, 0, 0 );
-            // make shape ( N.B. edge view not visible )
-            text = new THREE.Mesh( geometry, matLite );
-            text.name = "text"
-
-            scene.add( text );
-        }
-        else if( parameters.Convert == 'SVG' ) {
-            var shapes = font.generateShapes( message, 100 );
-            var holeShapes = [];
-            for ( var i = 0; i < shapes.length; i ++ ) {
-                var shape = shapes[ i ];
-                if ( shape.holes && shape.holes.length > 0 ) {
-                    for ( var j = 0; j < shape.holes.length; j ++ ) {
-                        var hole = shape.holes[ j ];
-                        holeShapes.push( hole );
-                    }
-                }
-            }
-            shapes.push.apply( shapes, holeShapes );     
-            
-            var lineText = new THREE.Object3D();
-            for ( var i = 0; i < shapes.length; i ++ ) {
-                var shape = shapes[ i ];
-                var points = shape.getPoints();
-                var geometry = new THREE.BufferGeometry().setFromPoints( points );
-
-                var lineMesh = new THREE.Line( geometry, matDark );
-                lineText.add( lineMesh );                
-            }
-            var helper = new THREE.BoxHelper(lineText, 0xff0000);
-            helper.update();
-            helper.geometry.computeBoundingBox();
-            xMid = - 0.5 * ( helper.geometry.boundingBox.max.x - helper.geometry.boundingBox.min.x );
-            yMid = - 0.5 * ( helper.geometry.boundingBox.max.y - helper.geometry.boundingBox.min.y );            
-    
-            //lineText.translate( 0, 0, 0 );
-            lineText.translateOnAxis( new THREE.Vector3(1, 0, 0), xMid );
-
-            lineText.name = "text"
-            scene.add( lineText );            
-        }
-        else if( parameters.Convert == 'STL' ) {
-        }
+        createObject(shapes);
 
     });
 }
