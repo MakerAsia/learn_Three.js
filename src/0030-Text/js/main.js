@@ -1,5 +1,6 @@
 var scene, renderer, camera, controls;
 var stats, gui, parameters;
+var dirLight, pointLight;
 
 function init() {
 
@@ -43,6 +44,7 @@ function init() {
     }).onChange(updateText)    
 
     addAxis();
+    addLight();
 
     updateText();  
 
@@ -51,6 +53,16 @@ function init() {
     window.addEventListener( 'resize', onWindowResize, false );  
     
     render();    
+}
+
+function addLight() {
+    dirLight = new THREE.DirectionalLight( 0xffffff, 0.125 );
+    dirLight.position.set( 0, 0, 1 ).normalize();
+    scene.add( dirLight );
+    
+    pointLight = new THREE.PointLight( 0xffffff, 1.5 );
+    pointLight.position.set( 0, 100, 90 );
+    scene.add( pointLight );
 }
 
 function addAxis() {
@@ -88,7 +100,12 @@ function createObject( shapes ) {
         transparent: false,
         side: THREE.DoubleSide
     } );          
-        
+
+    materials = [
+        new THREE.MeshPhongMaterial( { color: 0xffffff, flatShading: true } ), // front
+        new THREE.MeshPhongMaterial( { color: 0xffffff } ) // side
+    ];    
+
     //text.position.z = - 150;
     if( parameters.Convert == 'Preview' ) {
         var geometry = new THREE.ShapeBufferGeometry( shapes );
@@ -150,7 +167,7 @@ function createObject( shapes ) {
             var shape = shapes[ i ];
             var geometry = new THREE.ExtrudeGeometry( shape, extrusionSettings ); 
 
-            var lineMesh = new THREE.Mesh( geometry, matSolid );
+            var lineMesh = new THREE.Mesh( geometry, materials );
             lineText.add( lineMesh );                
         }
         var helper = new THREE.BoxHelper(lineText, 0xff0000);
@@ -169,7 +186,7 @@ function createObject( shapes ) {
 
 function createText() {
     var loader = new THREE.FontLoader();
-    loader.load( '../assets/fonts/helvetiker_regular.typeface.json', function ( font ) {
+    loader.load( '../assets/fonts/droid/droid_sans_regular.typeface.json', function ( font ) {
         var message = parameters.text;
         var shapes = font.generateShapes( message, 100 );
 
